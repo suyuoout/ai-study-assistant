@@ -3,6 +3,7 @@ package com.study.assisiant;
 
 import com.study.assisiant.JwtInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.*;
 
@@ -15,15 +16,25 @@ public class WebConfig implements WebMvcConfigurer {
 
 
     /**
-     * 跨域配置
+     * 跨域环境变量白名单，多个用逗号分隔。
+     * 前端由后端同源提供时不需要跨域，这里默认为空即关闭。
+     */
+    @Value("${app.allowed-origins:}")
+    private String allowedOrigins;
+
+
+    /**
+     * 跨域配置：默认关闭。需要跨域时用 APP_ALLOWED_ORIGINS 显式配置白名单。
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
 
+        if (allowedOrigins == null || allowedOrigins.isBlank()) {
+            return;
+        }
+
         registry.addMapping("/**")
-                .allowedOrigins(
-                        "http://localhost:5173"
-                )
+                .allowedOrigins(allowedOrigins.split(","))
                 .allowedMethods(
                         "GET",
                         "POST",

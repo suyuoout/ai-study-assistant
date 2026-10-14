@@ -1,0 +1,29 @@
+### 前端 ###
+study-assisiant-web/node_modules/
+study-assisiant-web/dist/
+study-assisiant-web/.vite/
+study-assisiant-web/*.tsbuildinfo
+
+### 后端构建产物 / 本地数据 ###
+study-assisiant/target/
+study-assisiant/data/
+study-assisiant/uploads/
+# 打包时由前端构建拷贝进来，不提交生成物
+study-assisiant/src/main/resources/static/
+
+### 安装包等大文件 ###
+release/
+
+### 密钥与环境配置 ###
+.env
+.env.*
+!.env.example
+**/application-local.yml
+**/application-local.yaml
+
+### IDE / 系统 ###
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+.DS_Store

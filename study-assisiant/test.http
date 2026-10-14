@@ -1,0 +1,104 @@
+
+### 测试用户注册
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "username": "student_test01",
+  "password": "Study123456",
+  "nickname": "学习用户",
+  "email": "student01@example.com"
+}
+
+
+### 测试登录：正确的用户名和密码
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+
+{
+  "username": "student_test01",
+  "password": "Study123456"
+}
+
+### 测试登录：错误的密码
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+
+{
+  "username": "student_test01",
+  "password": "WrongPassword123"
+}
+
+
+### 测试登录成功
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+
+{
+  "username": "student_test01",
+  "password": "Study123456"
+}
+
+### 测试登录失败
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+
+{
+  "username": "student_test01",
+  "password": "WrongPassword123"
+}
+
+### 1. 测试注册新用户
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "username": "student_test02",
+  "password": "Study123456",
+  "nickname": "新同学",
+  "email": "student02@example.com"
+}
+
+### 2. 测试重复注册
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "username": "student_test02",
+  "password": "Study123456",
+  "nickname": "新同学",
+  "email": "student02@example.com"
+}
+
+### 3. 测试密码长度不足
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "username": "student_test03",
+  "password": "123",
+  "nickname": "测试用户",
+  "email": "student03@example.com"
+}
+### 检查注册接口响应
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "username": "student_test02",
+  "password": "Study123456",
+  "nickname": "新同学",
+  "email": "student02@example.com"
+}
+
+
+### 测试注册密码长度不足
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "username": "student_test03",
+  "password": "123",
+  "nickname": "测试用户",
+  "email": "student03@example.com"
+}

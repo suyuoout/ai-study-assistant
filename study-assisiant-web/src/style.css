@@ -1,0 +1,120 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html.dark {
+    --el-bg-color: #151515;
+    --el-bg-color-page: #0a0a0a;
+    --el-bg-color-overlay: #1b1b1b;
+    --el-text-color-primary: #f2f2f2;
+    --el-text-color-regular: rgba(255, 255, 255, 0.72);
+    --el-text-color-secondary: rgba(255, 255, 255, 0.5);
+    --el-text-color-placeholder: rgba(255, 255, 255, 0.3);
+    --el-border-color: rgba(255, 255, 255, 0.09);
+    --el-border-color-light: rgba(255, 255, 255, 0.07);
+    --el-border-color-lighter: rgba(255, 255, 255, 0.05);
+    --el-fill-color: rgba(255, 255, 255, 0.05);
+    --el-fill-color-light: rgba(255, 255, 255, 0.04);
+    --el-fill-color-blank: #151515;
+    --el-color-primary: #4c8dff;
+    --el-border-radius-base: 10px;
+    --el-border-radius-small: 8px;
+
+    --panel: #151515;
+    --panel-inset: #101010;
+    --panel-active: #1e1e1e;
+    --hairline: rgba(255, 255, 255, 0.07);
+    --ink: #f2f2f2;
+    --ink-secondary: rgba(255, 255, 255, 0.55);
+    --ink-caption: rgba(255, 255, 255, 0.35);
+    --accent-blue: #4c8dff;
+    --serif-display: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+html,
+body,
+#app {
+    height: 100%;
+}
+
+body {
+    background: #0a0a0a;
+    color: #f2f2f2;
+    font-family:
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            "Helvetica Neue",
+            "Microsoft YaHei",
+            Arial,
+            sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    text-decoration: none;
+}
+
+.el-card {
+    border-radius: 14px;
+    border: 1px solid var(--hairline);
+    box-shadow: none;
+    background: var(--panel);
+}
+
+.el-card__header {
+    font-weight: 600;
+    border-bottom: 1px solid var(--hairline);
+}
+
+/* 白色主按钮，贴合参考图 */
+.el-button--primary {
+    --el-button-bg-color: #f2f2f2;
+    --el-button-border-color: #f2f2f2;
+    --el-button-text-color: #111111;
+    --el-button-hover-bg-color: #ffffff;
+    --el-button-hover-border-color: #ffffff;
+    --el-button-hover-text-color: #111111;
+    --el-button-active-bg-color: #d9d9d9;
+    --el-button-active-border-color: #d9d9d9;
+    --el-button-active-text-color: #111111;
+}
+
+.serif-display {
+    font-family: var(--serif-display);
+    letter-spacing: -0.03em;
+}
+
+/* 学习记录热力格子 */
+.heat-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, 12px);
+    gap: 4px;
+}
+
+.heat-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background: #1c1c1c;
+}
+
+.heat-cell.l1 {
+    background: #3a2e1c;
+}
+
+.heat-cell.l2 {
+    background: #6b4f2a;
+}
+
+.heat-cell.l3 {
+    background: #a8793a;
+}
+
+.heat-cell.l4 {
+    background: #dba460;
+}

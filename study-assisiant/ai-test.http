@@ -1,0 +1,9 @@
+POST http://localhost:8080/api/ai/generate-plan
+Content-Type: application/json
+
+{
+  "goal":"Java后端实习",
+  "level":"Java基础已完成",
+  "days":90,
+  "hours":3
+}

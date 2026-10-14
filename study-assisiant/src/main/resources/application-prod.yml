@@ -1,0 +1,25 @@
+# 生产环境：MySQL + 全部密钥走环境变量（不包含任何明文密钥）
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/study_assistant?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: never
+
+ai:
+  api-key: ${DEEPSEEK_API_KEY}
+  url: ${AI_BASE_URL:https://api.deepseek.com/chat/completions}
+
+jwt:
+  secret: ${JWT_SECRET}
+
+app:
+  upload-dir: ${UPLOAD_DIR:/data/uploads}
+  allow-register: ${ALLOW_REGISTER:true}
+
+logging:
+  level:
+    root: info

@@ -1,0 +1,12 @@
+.git
+**/node_modules
+**/target
+**/dist
+**/*.iml
+**/.idea
+**/.vscode
+release
+tools
+*.md
+study-assisiant/data
+study-assisiant/uploads

@@ -4,11 +4,15 @@ CREATE TABLE IF NOT EXISTS sys_user (
     password VARCHAR(255) NOT NULL,
     nickname VARCHAR(50),
     email VARCHAR(100),
+    ai_api_key VARCHAR(255),
     role VARCHAR(20) NOT NULL DEFAULT 'USER',
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_username UNIQUE (username)
 );
+
+-- 兼容已存在的数据库：为老库补上「个人 AI Key」字段
+ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS ai_api_key VARCHAR(255);
 
 CREATE TABLE IF NOT EXISTS study_document (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

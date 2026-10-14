@@ -15,7 +15,7 @@ import java.util.List;
 public interface SysUserMapper {
 
     @Select("""
-        SELECT id, username, password, nickname, email, role,
+        SELECT id, username, password, nickname, email, role, ai_api_key,
                create_time, update_time
         FROM sys_user
         ORDER BY id DESC
@@ -23,7 +23,7 @@ public interface SysUserMapper {
     List<SysUser> findAll();
 
     @Select("""
-        SELECT id, username, password, nickname, email, role,
+        SELECT id, username, password, nickname, email, role, ai_api_key,
                create_time, update_time
         FROM sys_user
         WHERE username = #{username}
@@ -32,7 +32,7 @@ public interface SysUserMapper {
     SysUser findByUsername(String username);
 
     @Select("""
-        SELECT id, username, password, nickname, email, role,
+        SELECT id, username, password, nickname, email, role, ai_api_key,
                create_time, update_time
         FROM sys_user
         WHERE id = #{id}
@@ -64,4 +64,12 @@ public interface SysUserMapper {
     int updateRole(
             @Param("id") Long id,
             @Param("role") String role);
+
+    @Update("""
+        UPDATE sys_user SET ai_api_key = #{aiApiKey}
+        WHERE id = #{id}
+        """)
+    int updateAiKey(
+            @Param("id") Long id,
+            @Param("aiApiKey") String aiApiKey);
 }

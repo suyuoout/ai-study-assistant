@@ -10,6 +10,7 @@ public class UserVO {
     private String nickname;
     private String email;
     private String role;
+    private String aiKeyMasked;
     private LocalDateTime createTime;
 
     public UserVO() {
@@ -62,6 +63,14 @@ public class UserVO {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getAiKeyMasked() {
+        return aiKeyMasked;
+    }
+
+    public void setAiKeyMasked(String aiKeyMasked) {
+        this.aiKeyMasked = aiKeyMasked;
     }
 
     public LocalDateTime getCreateTime() {

@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,9 @@ public class AIService {
 
     @Autowired
     private AIConfig aiConfig;
+
+    @Autowired
+    private AiRateLimiter aiRateLimiter;
 
     public String generatePlan(AIRequest request) {
         String prompt = buildPrompt(request);
@@ -113,7 +118,7 @@ public class AIService {
                 .url(aiConfig.getUrl())
                 .addHeader(
                         "Authorization",
-                        "Bearer " + aiConfig.getApiKey()
+                        "Bearer " + effectiveApiKey()
                 )
                 .post(body)
                 .build();
@@ -127,6 +132,52 @@ public class AIService {
         } catch (Exception e) {
             log.error("调用 DeepSeek 接口失败", e);
             throw new RuntimeException("AI生成失败，请稍后重试", e);
+        }
+    }
+
+    /**
+     * 优先使用调用者自己配置的 Key；没有则用系统默认 Key，并按日限流。
+     */
+    private String effectiveApiKey() {
+        String userKey = currentUserKey();
+        if (userKey != null && !userKey.isBlank()) {
+            return userKey;
+        }
+        aiRateLimiter.check(currentUserId());
+        return aiConfig.getApiKey();
+    }
+
+    private String currentUserKey() {
+        Object key = requestAttribute("aiApiKey");
+        return key == null ? null : String.valueOf(key);
+    }
+
+    private Long currentUserId() {
+        Object id = requestAttribute("userId");
+        if (id instanceof Long) {
+            return (Long) id;
+        }
+        if (id != null) {
+            try {
+                return Long.valueOf(String.valueOf(id));
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private Object requestAttribute(String name) {
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder
+                            .getRequestAttributes();
+            if (attributes == null) {
+                return null;
+            }
+            return attributes.getRequest().getAttribute(name);
+        } catch (Exception e) {
+            return null;
         }
     }
 }

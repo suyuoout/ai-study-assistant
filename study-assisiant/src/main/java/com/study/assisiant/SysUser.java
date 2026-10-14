@@ -17,6 +17,8 @@ public class SysUser {
 
     private String role;
 
+    private String aiApiKey;
+
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
@@ -70,6 +72,14 @@ public class SysUser {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getAiApiKey() {
+        return aiApiKey;
+    }
+
+    public void setAiApiKey(String aiApiKey) {
+        this.aiApiKey = aiApiKey;
     }
 
     public LocalDateTime getCreateTime() {

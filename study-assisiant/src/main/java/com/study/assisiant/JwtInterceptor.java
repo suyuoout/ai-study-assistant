@@ -4,6 +4,8 @@ package com.study.assisiant;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.study.assisiant.mapper.SysUserMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -11,6 +13,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class JwtInterceptor implements HandlerInterceptor {
+
+    @Autowired
+    private SysUserMapper sysUserMapper;
 
 
     @Override
@@ -61,6 +66,14 @@ public class JwtInterceptor implements HandlerInterceptor {
                     "role",
                     claims.get("role")
             );
+
+            // 该用户自己配置的 DeepSeek Key（可能为 null）
+            SysUser user = sysUserMapper.findById(userId);
+            if (user != null
+                    && user.getAiApiKey() != null
+                    && !user.getAiApiKey().isBlank()) {
+                request.setAttribute("aiApiKey", user.getAiApiKey());
+            }
 
 
             return true;

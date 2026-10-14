@@ -158,6 +158,28 @@ public class UserController {
         return Result.success("修改成功", toVO(user));
     }
 
+    @PutMapping("/me/ai-key")
+    public Result<String> updateAiKey(
+            @RequestBody java.util.Map<String, String> body,
+            HttpServletRequest request) {
+
+        Long userId = (Long) request.getAttribute("userId");
+
+        String key = body == null ? null : body.get("aiKey");
+        if (key != null) {
+            key = key.trim();
+            if (key.isEmpty()) {
+                key = null; // 传空表示清除，恢复使用系统默认 Key
+            }
+        }
+
+        sysUserMapper.updateAiKey(userId, key);
+
+        return Result.success(
+                key == null ? "已清除个人 API Key" : "已保存个人 API Key",
+                null);
+    }
+
     private UserVO toVO(SysUser user) {
         UserVO vo = new UserVO(
                 user.getId(),
@@ -167,6 +189,18 @@ public class UserController {
                 user.getCreateTime()
         );
         vo.setRole(user.getRole());
+        vo.setAiKeyMasked(maskKey(user.getAiApiKey()));
         return vo;
+    }
+
+    private String maskKey(String key) {
+        if (key == null || key.isBlank()) {
+            return null;
+        }
+        if (key.length() <= 8) {
+            return "****";
+        }
+        return key.substring(0, 5) + "****"
+                + key.substring(key.length() - 4);
     }
 }

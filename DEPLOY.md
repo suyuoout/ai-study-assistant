@@ -15,6 +15,10 @@
 | `DB_PASSWORD` | 数据库密码 | `******` |
 | `ALLOW_REGISTER` | 是否开放注册（生产建议 `false`） | `false` |
 | `UPLOAD_DIR` | 上传文件目录（建议挂载数据卷） | `/data/uploads` |
+| `AI_DAILY_LIMIT` | 每用户每天使用「系统默认 Key」调用 AI 的次数（`0` 表示不限制） | `50` |
+
+> 每个用户也可以在自己的「个人中心 → 我的 AI Key」里填上自己的 DeepSeek Key，
+> 填了之后 AI 调用走他自己的额度，且不占用上面的每日次数。
 
 > 本地开发和离线运行不需要这些：不设置 `SPRING_PROFILES_ACTIVE` 时默认用内置 H2 文件库，开箱即用。
 

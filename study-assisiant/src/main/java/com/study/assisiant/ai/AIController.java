@@ -47,6 +47,8 @@ public class AIController {
         try {
             content =
                     aiService.generatePlan(request);
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             return Result.error(
                     500,

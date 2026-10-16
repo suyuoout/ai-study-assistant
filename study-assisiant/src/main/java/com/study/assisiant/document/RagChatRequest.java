@@ -1,34 +1,18 @@
 package com.study.assisiant.document;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.util.List;
 
-public class RagChatRequest {
+public record RagChatRequest(
+        Long sessionId,
 
-    private Long sessionId;
-    private String question;
-    private List<Long> documentIds;
+        @NotBlank(message = "问题不能为空")
+        @Size(max = 1000, message = "问题最长 1000 个字符")
+        String question,
 
-    public Long getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(Long sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public String getQuestion() {
-        return question;
-    }
-
-    public void setQuestion(String question) {
-        this.question = question;
-    }
-
-    public List<Long> getDocumentIds() {
-        return documentIds;
-    }
-
-    public void setDocumentIds(List<Long> documentIds) {
-        this.documentIds = documentIds;
-    }
+        /** 只在指定的资料里检索；为空表示全部资料 */
+        List<Long> documentIds
+) {
 }

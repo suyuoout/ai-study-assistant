@@ -11,13 +11,15 @@ import Dashboard from "../views/Dashboard.vue"
 import StudyPlan from "../views/StudyPlan.vue"
 import StudyPlanDetail from "../views/StudyPlanDetail.vue"
 import Tasks from "../views/Tasks.vue"
-import Knowledge from "../views/Knowledge.vue"
-import Chat from "../views/Chat.vue"
 import Profile from "../views/Profile.vue"
-import AdminDashboard from "../views/admin/AdminDashboard.vue"
-import AdminUsers from "../views/admin/AdminUsers.vue"
-import AdminDocuments from "../views/admin/AdminDocuments.vue"
-import AdminPlans from "../views/admin/AdminPlans.vue"
+
+// 这些页面体积较大或使用频率较低，按需加载，减小首屏体积
+const Knowledge = () => import("../views/Knowledge.vue")
+const Chat = () => import("../views/Chat.vue")
+const AdminDashboard = () => import("../views/admin/AdminDashboard.vue")
+const AdminUsers = () => import("../views/admin/AdminUsers.vue")
+const AdminDocuments = () => import("../views/admin/AdminDocuments.vue")
+const AdminPlans = () => import("../views/admin/AdminPlans.vue")
 
 
 const router = createRouter({
@@ -105,6 +107,12 @@ const router = createRouter({
                     meta: { title: "计划管理" }
                 }
             ]
+        },
+
+        // 兜底：未知路径回到看板
+        {
+            path: "/:pathMatch(.*)*",
+            redirect: "/dashboard"
         }
 
     ]
@@ -116,6 +124,11 @@ router.beforeEach((to) => {
 
     const token = localStorage.getItem("token")
     const role = localStorage.getItem("role")
+
+    // 已登录用户访问登录/注册页直接进看板
+    if ((to.path === "/login" || to.path === "/register") && token) {
+        return "/dashboard"
+    }
 
     if (to.path !== "/login"
         && to.path !== "/register"

@@ -1,23 +1,13 @@
 package com.study.assisiant.chat;
 
-public class ChatRequest {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-    private Long sessionId;
-    private String message;
+public record ChatRequest(
+        Long sessionId,
 
-    public Long getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(Long sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
+        @NotBlank(message = "消息不能为空")
+        @Size(max = 4000, message = "单条消息最长 4000 个字符")
+        String message
+) {
 }

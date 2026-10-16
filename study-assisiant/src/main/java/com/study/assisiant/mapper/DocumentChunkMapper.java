@@ -29,9 +29,26 @@ public interface DocumentChunkMapper {
         """)
     List<DocumentChunk> findByDocumentId(Long documentId);
 
-    @Delete("DELETE FROM document_chunk WHERE document_id = #{documentId}")
-    int deleteByDocumentId(Long documentId);
+    @Select("""
+        SELECT * FROM document_chunk
+        WHERE document_id = #{documentId}
+        ORDER BY chunk_index
+        LIMIT #{size} OFFSET #{offset}
+        """)
+    List<DocumentChunk> findPageByDocumentId(
+            @Param("documentId") Long documentId,
+            @Param("offset") int offset,
+            @Param("size") int size);
 
+    @Select("""
+        SELECT COUNT(*) FROM document_chunk
+        WHERE document_id = #{documentId}
+        """)
+    long countByDocumentId(Long documentId);
+
+    /**
+     * 检索候选集：限制条数，避免知识库变大后一次性把全部片段读进内存。
+     */
     @Select("""
         <script>
         SELECT * FROM document_chunk
@@ -39,7 +56,13 @@ public interface DocumentChunkMapper {
         <foreach collection="ids" item="id" open="(" separator="," close=")">
           #{id}
         </foreach>
+        ORDER BY id
+        LIMIT #{limit}
         </script>
         """)
-    List<DocumentChunk> findByDocumentIds(@Param("ids") List<Long> ids);
+    List<DocumentChunk> findCandidates(@Param("ids") List<Long> ids,
+                                       @Param("limit") int limit);
+
+    @Delete("DELETE FROM document_chunk WHERE document_id = #{documentId}")
+    int deleteByDocumentId(Long documentId);
 }

@@ -46,14 +46,15 @@
 
 <script setup>
 import { ref } from "vue"
-import { useRouter } from "vue-router"
-import { ElMessage } from "element-plus"
+import { useRoute, useRouter } from "vue-router"
+import { ElMessage, ElMessageBox } from "element-plus"
 import { User, Lock } from "@element-plus/icons-vue"
-import request from "../api/request"
+import request, { errorMessage } from "../api/request"
 
 const username = ref("")
 const password = ref("")
 const loading = ref(false)
+const route = useRoute()
 const router = useRouter()
 
 const login = async () => {
@@ -64,15 +65,28 @@ const login = async () => {
   loading.value = true
   try {
     const res = await request.post("/api/users/login", {
-      username: username.value,
+      username: username.value.trim(),
       password: password.value
     })
-    localStorage.setItem("token", res.data.data.token)
-    localStorage.setItem("role", res.data.data.user.role)
+    const data = res.data.data
+    localStorage.setItem("token", data.token)
+    localStorage.setItem("role", data.user.role)
     ElMessage.success("登录成功")
-    router.push("/dashboard")
-  } catch (e) {
-    ElMessage.error(e.response?.data?.message || "登录失败")
+
+    if (data.user.mustChangePassword) {
+      await ElMessageBox.alert(
+        "当前使用的是初始密码，请先修改密码。", "安全提示",
+        { type: "warning", confirmButtonText: "去修改" }
+      )
+      router.push("/profile")
+      return
+    }
+
+    const redirect = route.query.redirect
+    router.push(typeof redirect === "string" && redirect.startsWith("/")
+      ? redirect : "/dashboard")
+  } catch (error) {
+    ElMessage.error(errorMessage(error, "登录失败"))
   } finally {
     loading.value = false
   }
@@ -117,5 +131,6 @@ const login = async () => {
   text-align: center;
   margin-top: 18px;
   color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
 }
 </style>

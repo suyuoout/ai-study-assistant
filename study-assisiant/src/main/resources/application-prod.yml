@@ -12,14 +12,40 @@ spring:
 ai:
   api-key: ${DEEPSEEK_API_KEY}
   url: ${AI_BASE_URL:https://api.deepseek.com/chat/completions}
+  model: ${AI_MODEL:deepseek-chat}
+  temperature: ${AI_TEMPERATURE:0.7}
+  max-tokens: ${AI_MAX_TOKENS:2048}
+  connect-timeout-seconds: ${AI_CONNECT_TIMEOUT:30}
+  read-timeout-seconds: ${AI_READ_TIMEOUT:120}
 
 jwt:
   secret: ${JWT_SECRET}
+  expire-minutes: ${JWT_EXPIRE_MINUTES:120}
 
 app:
   upload-dir: ${UPLOAD_DIR:/data/uploads}
   allow-register: ${ALLOW_REGISTER:true}
+  ai-daily-limit: ${AI_DAILY_LIMIT:50}
+  # 生产环境必须显式提供：个人 AI Key 的加密密钥
+  crypto-key: ${CRYPTO_KEY}
+  bootstrap-admin: ${BOOTSTRAP_ADMIN:false}
+  admin-username: ${ADMIN_USERNAME:admin}
+  admin-password: ${ADMIN_PASSWORD:}
+  async-parse: ${ASYNC_PARSE:true}
+  user-cache-seconds: ${USER_CACHE_SECONDS:60}
+  login-max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
+  login-lock-minutes: ${LOGIN_LOCK_MINUTES:10}
 
 logging:
   level:
     root: info
+    com.study.assisiant: info
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

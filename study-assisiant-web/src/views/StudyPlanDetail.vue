@@ -3,13 +3,16 @@
     <el-card shadow="never" class="head-card">
       <div class="head">
         <div>
-          <div class="title serif-display">{{ plan.title }}</div>
+          <div class="title">{{ plan.title }}</div>
           <div class="sub">
             <el-tag size="small" effect="dark">{{ plan.status }}</el-tag>
-            <span>创建于 {{ fmtDateTime(plan.createTime) }}</span>
+            <span>创建于 {{ formatDateTime(plan.createTime) }}</span>
           </div>
         </div>
-        <el-button @click="$router.push('/study')">返回列表</el-button>
+        <div class="head-actions">
+          <el-button @click="addTask">新增任务</el-button>
+          <el-button @click="$router.push('/study')">返回列表</el-button>
+        </div>
       </div>
 
       <div class="facts">
@@ -20,7 +23,7 @@
         <div class="fact">
           <div class="k">计划周期</div>
           <div class="v">
-            {{ plan.startDate || "—" }} ~ {{ plan.endDate || "—" }}
+            {{ formatDate(plan.startDate) }} ~ {{ formatDate(plan.endDate) }}
           </div>
         </div>
         <div class="fact">
@@ -30,20 +33,24 @@
           </div>
         </div>
         <div class="fact">
-          <div class="k">任务数量</div>
-          <div class="v">{{ displayTasks.length }} 项</div>
+          <div class="k">任务进度</div>
+          <div class="v">{{ doneCount }} / {{ tasks.length }} 项已完成</div>
         </div>
       </div>
+      <el-progress :percentage="progress" :stroke-width="8" class="bar" />
     </el-card>
 
     <el-card shadow="never">
       <template #header>
-        <span>任务清单</span>
+        <div class="card-head">
+          <span>任务清单</span>
+          <span class="card-sub">按日期编排，可在行内直接改状态</span>
+        </div>
       </template>
 
-      <div v-if="displayTasks.length" class="task-list">
-        <div class="task" v-for="(t, i) in displayTasks" :key="i">
-          <div class="task-date">{{ fmtDate(t.taskDate) }}</div>
+      <div v-if="tasks.length" class="task-list">
+        <div class="task" v-for="t in tasks" :key="t.id">
+          <div class="task-date">{{ formatDate(t.taskDate) }}</div>
           <div class="task-main">
             <div class="task-title">{{ t.title }}</div>
             <div class="task-desc" v-if="t.description">
@@ -54,9 +61,14 @@
             <span class="task-min">
               {{ t.estimatedMinutes ? t.estimatedMinutes + " 分钟" : "—" }}
             </span>
-            <el-tag size="small" :type="statusType(t.status)">
-              {{ statusText(t.status) }}
-            </el-tag>
+            <el-select :model-value="t.status" size="small" style="width: 106px"
+                       @change="(v) => changeStatus(t, v)">
+              <el-option label="未开始" value="TODO" />
+              <el-option label="进行中" value="DOING" />
+              <el-option label="已完成" value="DONE" />
+            </el-select>
+            <el-button size="small" text type="danger"
+                       @click="removeTask(t)">删除</el-button>
           </div>
         </div>
       </div>
@@ -65,83 +77,149 @@
 
       <el-empty v-else description="暂无任务" />
     </el-card>
+
+    <el-dialog v-model="taskVisible" title="新增任务" width="500px">
+      <el-form label-width="88px">
+        <el-form-item label="任务标题" required>
+          <el-input v-model="taskForm.title" />
+        </el-form-item>
+        <el-form-item label="任务说明">
+          <el-input v-model="taskForm.description" type="textarea" :rows="2" />
+        </el-form-item>
+        <el-form-item label="计划日期">
+          <el-date-picker v-model="taskForm.taskDate" type="date"
+                          value-format="YYYY-MM-DD" />
+        </el-form-item>
+        <el-form-item label="预计分钟">
+          <el-input-number v-model="taskForm.estimatedMinutes"
+                           :min="5" :max="720" :step="15" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="taskVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="saveTask">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 
 <script setup>
-import { ref, computed, onMounted } from "vue"
+import { ref, reactive, computed, onMounted } from "vue"
 import { useRoute } from "vue-router"
-import request from "../api/request"
+import { ElMessage, ElMessageBox } from "element-plus"
+import request, { errorMessage } from "../api/request"
+import { formatDate, formatDateTime, todayString } from "../utils/format"
 
 const route = useRoute()
 const plan = ref(null)
 const tasks = ref([])
+const taskVisible = ref(false)
+const saving = ref(false)
 
-const fmtDateTime = (value) => {
-  if (!value) return "—"
-  const s = String(value)
-  const m = s.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/)
-  return m ? `${m[1]} ${m[2]}` : s
-}
-
-const fmtDate = (value) => {
-  if (!value) return "—"
-  return String(value).slice(0, 10)
-}
-
-// 从计划内容里尝试解析出任务（兼容旧数据结构）
-const contentTasks = computed(() => {
-  const content = plan.value?.content
-  if (!content) return []
-  try {
-    const obj = JSON.parse(content)
-    if (obj && Array.isArray(obj.tasks)) return obj.tasks
-  } catch (e) {
-    // 纯文本计划，忽略
-  }
-  return []
+const taskForm = reactive({
+  title: "",
+  description: "",
+  taskDate: todayString(),
+  estimatedMinutes: 60
 })
 
-const displayTasks = computed(() =>
-  tasks.value.length ? tasks.value : contentTasks.value
+const doneCount = computed(() =>
+  tasks.value.filter((t) => t.status === "DONE").length
+)
+
+const progress = computed(() =>
+  tasks.value.length === 0
+    ? 0
+    : Math.round((doneCount.value / tasks.value.length) * 100)
 )
 
 const plainContent = computed(() => {
   const content = plan.value?.content || ""
   try {
-    const obj = JSON.parse(content)
-    if (obj && Array.isArray(obj.tasks)) {
-      return obj.tasks
-        .map((t) => `${fmtDate(t.taskDate)}  ${t.title}`)
+    const parsed = JSON.parse(content)
+    if (Array.isArray(parsed?.tasks)) {
+      return parsed.tasks
+        .map((t) => `${formatDate(t.taskDate)}  ${t.title}`)
         .join("\n")
     }
-  } catch (e) {
-    // 纯文本
+  } catch (error) {
+    // 纯文本计划
   }
   return content
 })
 
-const statusText = (status) => {
-  if (status === "DONE") return "已完成"
-  if (status === "DOING") return "进行中"
-  return "未开始"
+const load = async () => {
+  try {
+    const [p, t] = await Promise.all([
+      request.get(`/api/plans/${route.params.id}`),
+      request.get(`/api/plans/${route.params.id}/tasks`)
+    ])
+    plan.value = p.data.data
+    tasks.value = t.data.data || []
+  } catch (error) {
+    ElMessage.error(errorMessage(error, "加载计划失败"))
+  }
 }
 
-const statusType = (status) => {
-  if (status === "DONE") return "success"
-  if (status === "DOING") return "warning"
-  return "info"
+const changeStatus = async (task, status) => {
+  try {
+    await request.patch(`/api/tasks/${task.id}/status`, {
+      status,
+      actualMinutes: status === "DONE"
+        ? (task.actualMinutes || task.estimatedMinutes || 0) : null
+    })
+    task.status = status
+    ElMessage.success("已更新")
+  } catch (error) {
+    ElMessage.error(errorMessage(error, "更新失败"))
+  }
 }
 
-onMounted(async () => {
-  const [p, t] = await Promise.all([
-    request.get(`/api/plans/${route.params.id}`),
-    request.get(`/api/plans/${route.params.id}/tasks`)
-  ])
-  plan.value = p.data.data
-  tasks.value = t.data.data || []
-})
+const removeTask = async (task) => {
+  try {
+    await ElMessageBox.confirm(`确认删除任务「${task.title}」？`, "提示",
+      { type: "warning" })
+    await request.delete(`/api/tasks/${task.id}`)
+    ElMessage.success("删除成功")
+    load()
+  } catch (error) {
+    if (error !== "cancel" && error !== "close") {
+      ElMessage.error(errorMessage(error, "删除失败"))
+    }
+  }
+}
+
+const addTask = () => {
+  taskForm.title = ""
+  taskForm.description = ""
+  taskForm.taskDate = formatDate(plan.value?.startDate) || todayString()
+  taskForm.estimatedMinutes = plan.value?.dailyMinutes || 60
+  taskVisible.value = true
+}
+
+const saveTask = async () => {
+  if (!taskForm.title.trim()) {
+    ElMessage.warning("请填写任务标题")
+    return
+  }
+  saving.value = true
+  try {
+    await request.post("/api/tasks", {
+      planId: Number(route.params.id),
+      ...taskForm
+    })
+    ElMessage.success("任务已创建")
+    taskVisible.value = false
+    load()
+  } catch (error) {
+    ElMessage.error(errorMessage(error, "创建失败"))
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(load)
 </script>
 
 
@@ -157,6 +235,11 @@ onMounted(async () => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+}
+
+.head-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .title {
@@ -192,6 +275,22 @@ onMounted(async () => {
   font-size: 15px;
 }
 
+.bar {
+  margin-top: 18px;
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.card-sub {
+  color: var(--ink-caption);
+  font-size: 12px;
+  font-weight: normal;
+}
+
 .task-list {
   display: flex;
   flex-direction: column;
@@ -214,7 +313,7 @@ onMounted(async () => {
   flex: none;
   color: var(--ink-caption);
   font-size: 13px;
-  padding-top: 2px;
+  padding-top: 4px;
 }
 
 .task-main {
@@ -252,5 +351,15 @@ onMounted(async () => {
   line-height: 1.9;
   font-family: inherit;
   color: var(--ink-secondary);
+}
+
+@media (max-width: 900px) {
+  .facts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .task {
+    flex-wrap: wrap;
+  }
 }
 </style>

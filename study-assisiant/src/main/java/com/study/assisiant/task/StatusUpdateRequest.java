@@ -1,23 +1,18 @@
 package com.study.assisiant.task;
 
-public class StatusUpdateRequest {
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
-    private String status;
-    private Integer actualMinutes;
+public record StatusUpdateRequest(
+        @NotBlank(message = "任务状态不能为空")
+        @Pattern(regexp = "TODO|DOING|DONE",
+                message = "无效的任务状态")
+        String status,
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Integer getActualMinutes() {
-        return actualMinutes;
-    }
-
-    public void setActualMinutes(Integer actualMinutes) {
-        this.actualMinutes = actualMinutes;
-    }
+        @Min(value = 0, message = "实际用时不能为负数")
+        @Max(value = 1440, message = "实际用时最多 1440 分钟")
+        Integer actualMinutes
+) {
 }

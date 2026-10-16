@@ -4,15 +4,33 @@ CREATE TABLE IF NOT EXISTS sys_user (
     password VARCHAR(255) NOT NULL,
     nickname VARCHAR(50),
     email VARCHAR(100),
-    ai_api_key VARCHAR(255),
+    ai_api_key VARCHAR(512),
     role VARCHAR(20) NOT NULL DEFAULT 'USER',
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_username UNIQUE (username)
 );
 
--- 兼容已存在的数据库：为老库补上「个人 AI Key」字段
-ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS ai_api_key VARCHAR(255);
+-- 兼容已存在的数据库：为老库补上后加的字段
+ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS ai_api_key VARCHAR(512);
+ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS enabled BOOLEAN DEFAULT TRUE;
+ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS ai_usage (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    kind VARCHAR(20) NOT NULL,
+    model VARCHAR(50),
+    prompt_tokens INT,
+    completion_tokens INT,
+    success BOOLEAN NOT NULL DEFAULT TRUE,
+    own_key BOOLEAN NOT NULL DEFAULT FALSE,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_usage_user_time ON ai_usage (user_id, create_time);
 
 CREATE TABLE IF NOT EXISTS study_document (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -22,9 +40,13 @@ CREATE TABLE IF NOT EXISTS study_document (
     storage_path VARCHAR(500),
     file_type VARCHAR(20),
     status VARCHAR(20) NOT NULL DEFAULT 'UPLOADED',
+    error_message VARCHAR(500),
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_document_user FOREIGN KEY (user_id) REFERENCES sys_user(id)
 );
+
+-- 兼容已存在的数据库：补上资料解析失败原因字段
+ALTER TABLE study_document ADD COLUMN IF NOT EXISTS error_message VARCHAR(500);
 
 CREATE TABLE IF NOT EXISTS document_chunk (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

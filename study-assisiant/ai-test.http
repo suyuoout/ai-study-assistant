@@ -1,9 +1,46 @@
-POST http://localhost:8080/api/ai/generate-plan
+### 说明：先执行 login.http 拿到 {{token}}
+
+### 1. 普通问答（一次性返回）
+POST http://localhost:8080/api/ai/chat
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
-  "goal":"Java后端实习",
-  "level":"Java基础已完成",
-  "days":90,
-  "hours":3
+  "message": "用一句话解释什么是数据库索引"
 }
+
+### 2. 普通问答（流式 SSE，事件：session / delta / done / error）
+POST http://localhost:8080/api/ai/chat/stream
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "message": "用三句话介绍 B+ 树"
+}
+
+### 3. 基于资料提问（RAG，事件：session / sources / delta / done）
+POST http://localhost:8080/api/ai/rag/chat
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "question": "索引为什么会变慢？"
+}
+
+### 4. AI 生成学习计划（会自动拆解为每日任务）
+POST http://localhost:8080/api/plans/generate
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "goal": "掌握数据库索引",
+  "currentLevel": "了解 SQL 基础",
+  "startDate": "2026-10-16",
+  "endDate": "2026-10-25",
+  "dailyMinutes": 90,
+  "availableDays": ["周一", "周二", "周三", "周四", "周五"]
+}
+
+### 5. AI 学习复盘报告
+GET http://localhost:8080/api/statistics/report?days=7
+Authorization: Bearer {{token}}

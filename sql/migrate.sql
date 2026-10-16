@@ -1,4 +1,5 @@
--- 现有 study_assistant 库的增量迁移脚本（幂等性以 information_schema 判断为准）
+-- 现有 study_assistant 库的增量迁移脚本（可重复执行，幂等性以 information_schema 判断为准）
+-- 覆盖：role / goal / daily_minutes / ai_api_key 加长 / enabled / must_change_password / ai_usage 表
 USE study_assistant;
 
 -- sys_user 增加 role 字段
@@ -88,6 +89,7 @@ CREATE TABLE IF NOT EXISTS study_document (
     storage_path VARCHAR(500) DEFAULT NULL COMMENT '文件保存路径',
     file_type    VARCHAR(20)  DEFAULT NULL COMMENT 'PDF/TXT/DOCX',
     status       VARCHAR(20)  NOT NULL DEFAULT 'UPLOADED' COMMENT 'UPLOADED/PROCESSING/READY/FAILED',
+    error_message VARCHAR(500) DEFAULT NULL COMMENT '解析失败原因',
     create_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
     PRIMARY KEY (id),
     KEY idx_document_user (user_id),
@@ -107,3 +109,70 @@ CREATE TABLE IF NOT EXISTS document_chunk (
     KEY idx_chunk_document (document_id),
     CONSTRAINT fk_chunk_document FOREIGN KEY (document_id) REFERENCES study_document (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档片段表';
+
+-- ---------------------------------------------------------------------------
+-- 2026-10 新增：个人 AI Key 加密存储、账号启用状态、强制改密、AI 用量统计
+-- ---------------------------------------------------------------------------
+
+-- 1. ai_api_key 加长（加密后字符串比原始 Key 长）
+SET @has_key = (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = 'study_assistant'
+      AND TABLE_NAME = 'sys_user'
+      AND COLUMN_NAME = 'ai_api_key'
+);
+SET @sql = IF(@has_key = 0,
+    'ALTER TABLE sys_user ADD COLUMN ai_api_key VARCHAR(512) NULL COMMENT ''个人AI Key（加密存储）''',
+    'ALTER TABLE sys_user MODIFY COLUMN ai_api_key VARCHAR(512) NULL COMMENT ''个人AI Key（加密存储）''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 2. 账号启用状态
+SET @has_enabled = (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = 'study_assistant'
+      AND TABLE_NAME = 'sys_user'
+      AND COLUMN_NAME = 'enabled'
+);
+SET @sql = IF(@has_enabled = 0,
+    'ALTER TABLE sys_user ADD COLUMN enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT ''1启用/0禁用''',
+    'SELECT ''enabled already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 3. 强制改密标记
+SET @has_mcp = (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = 'study_assistant'
+      AND TABLE_NAME = 'sys_user'
+      AND COLUMN_NAME = 'must_change_password'
+);
+SET @sql = IF(@has_mcp = 0,
+    'ALTER TABLE sys_user ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0 COMMENT ''1需要强制改密''',
+    'SELECT ''must_change_password already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 4. AI 用量表
+SET @has_doc_err = (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = 'study_assistant'
+      AND TABLE_NAME = 'study_document'
+      AND COLUMN_NAME = 'error_message'
+);
+SET @sql = IF(@has_doc_err = 0,
+    'ALTER TABLE study_document ADD COLUMN error_message VARCHAR(500) NULL COMMENT ''解析失败原因''',
+    'SELECT ''error_message already exists''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+CREATE TABLE IF NOT EXISTS ai_usage (
+    id                BIGINT      NOT NULL AUTO_INCREMENT COMMENT '记录ID',
+    user_id           BIGINT      NOT NULL COMMENT '用户ID',
+    kind              VARCHAR(20) NOT NULL COMMENT 'CHAT/RAG/PLAN/REPORT',
+    model             VARCHAR(50) DEFAULT NULL COMMENT '模型名',
+    prompt_tokens     INT         DEFAULT NULL COMMENT '输入token',
+    completion_tokens INT         DEFAULT NULL COMMENT '输出token',
+    success           TINYINT(1)  NOT NULL DEFAULT 1 COMMENT '是否成功',
+    own_key           TINYINT(1)  NOT NULL DEFAULT 0 COMMENT '1表示用的是用户自己的Key',
+    create_time       DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '调用时间',
+    PRIMARY KEY (id),
+    KEY idx_usage_user_time (user_id, create_time),
+    KEY idx_usage_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI调用用量表';

@@ -26,16 +26,32 @@ public interface ChatSessionMapper {
 
     @Select("""
         SELECT * FROM chat_session
+        WHERE id = #{id} AND user_id = #{userId}
+        """)
+    ChatSession findByIdAndUser(@Param("id") Long id,
+                                @Param("userId") Long userId);
+
+    @Select("""
+        SELECT * FROM chat_session
         WHERE user_id = #{userId}
-        ORDER BY update_time DESC
+        ORDER BY update_time DESC, id DESC
         """)
     List<ChatSession> findByUserId(Long userId);
 
     @Update("""
         UPDATE chat_session SET title = #{title}
+        WHERE id = #{id} AND user_id = #{userId}
+        """)
+    int updateTitle(@Param("id") Long id,
+                    @Param("userId") Long userId,
+                    @Param("title") String title);
+
+    /** 新消息进来时刷新会话排序时间（H2/MySQL 行为一致） */
+    @Update("""
+        UPDATE chat_session SET update_time = CURRENT_TIMESTAMP
         WHERE id = #{id}
         """)
-    int updateTitle(@Param("id") Long id, @Param("title") String title);
+    int touch(@Param("id") Long id);
 
     @Delete("""
         DELETE FROM chat_session

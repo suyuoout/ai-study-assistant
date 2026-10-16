@@ -1,6 +1,11 @@
 ai:
   api-key: ${DEEPSEEK_API_KEY:}
   url: ${AI_BASE_URL:https://api.deepseek.com/chat/completions}
+  model: ${AI_MODEL:deepseek-chat}
+  temperature: ${AI_TEMPERATURE:0.7}
+  max-tokens: ${AI_MAX_TOKENS:2048}
+  connect-timeout-seconds: ${AI_CONNECT_TIMEOUT:30}
+  read-timeout-seconds: ${AI_READ_TIMEOUT:120}
 
 server:
   address: 0.0.0.0
@@ -9,6 +14,8 @@ server:
 spring:
   application:
     name: study-assisiant
+  jackson:
+    time-zone: Asia/Shanghai
   servlet:
     multipart:
       max-file-size: 20MB
@@ -28,7 +35,31 @@ mybatis:
 
 jwt:
   secret: ${JWT_SECRET:study-assistant-dev-secret-please-change}
+  expire-minutes: ${JWT_EXPIRE_MINUTES:120}
 
 app:
   upload-dir: ${UPLOAD_DIR:${user.home}/.study-assistant/uploads}
   allow-register: ${ALLOW_REGISTER:true}
+  ai-daily-limit: ${AI_DAILY_LIMIT:50}
+  # 敏感字段（个人 AI Key）加密密钥；不配置时回退用 jwt.secret 派生
+  crypto-key: ${CRYPTO_KEY:}
+  # 是否创建初始管理员账号（生产请保持 false，或显式提供 ADMIN_PASSWORD）
+  bootstrap-admin: ${BOOTSTRAP_ADMIN:false}
+  admin-username: ${ADMIN_USERNAME:admin}
+  admin-password: ${ADMIN_PASSWORD:}
+  # 文档解析是否异步执行
+  async-parse: ${ASYNC_PARSE:true}
+  # 用户信息缓存秒数（权限变更的生效延迟上限）
+  user-cache-seconds: ${USER_CACHE_SECONDS:60}
+  # 登录失败次数与锁定时长
+  login-max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
+  login-lock-minutes: ${LOGIN_LOCK_MINUTES:10}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

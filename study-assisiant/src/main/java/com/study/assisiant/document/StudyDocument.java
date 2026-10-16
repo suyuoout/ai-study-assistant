@@ -11,6 +11,7 @@ public class StudyDocument {
     private String storagePath;
     private String fileType;
     private String status;
+    private String errorMessage;
     private LocalDateTime createTime;
 
     public Long getId() {
@@ -67,6 +68,14 @@ public class StudyDocument {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 
     public LocalDateTime getCreateTime() {

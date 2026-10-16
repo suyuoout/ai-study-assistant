@@ -18,7 +18,8 @@ public interface StudyDocumentMapper {
         INSERT INTO study_document
         (user_id, title, file_name, storage_path, file_type, status)
         VALUES
-        (#{userId}, #{title}, #{fileName}, #{storagePath}, #{fileType}, #{status})
+        (#{userId}, #{title}, #{fileName}, #{storagePath}, #{fileType},
+         #{status})
         """)
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(StudyDocument document);
@@ -29,7 +30,7 @@ public interface StudyDocumentMapper {
     @Select("""
         SELECT * FROM study_document
         WHERE user_id = #{userId}
-        ORDER BY create_time DESC
+        ORDER BY id DESC
         """)
     List<StudyDocument> findByUserId(Long userId);
 
@@ -40,15 +41,38 @@ public interface StudyDocumentMapper {
     StudyDocument findByIdAndUser(
             @Param("id") Long id, @Param("userId") Long userId);
 
+    @Select("""
+        SELECT * FROM study_document
+        WHERE user_id = #{userId} AND status = #{status}
+        ORDER BY id DESC
+        """)
+    List<StudyDocument> findByUserIdAndStatus(
+            @Param("userId") Long userId,
+            @Param("status") String status);
+
     @Update("""
-        UPDATE study_document SET status = #{status}
+        UPDATE study_document
+        SET status = #{status}, error_message = #{errorMessage}
         WHERE id = #{id}
         """)
-    int updateStatus(@Param("id") Long id, @Param("status") String status);
+    int updateStatus(@Param("id") Long id,
+                     @Param("status") String status,
+                     @Param("errorMessage") String errorMessage);
 
     @Delete("""
         DELETE FROM study_document
         WHERE id = #{id} AND user_id = #{userId}
         """)
     int delete(@Param("id") Long id, @Param("userId") Long userId);
+
+    @Delete("DELETE FROM study_document WHERE id = #{id}")
+    int deleteById(@Param("id") Long id);
+
+    @Select("SELECT COUNT(*) FROM study_document WHERE user_id = #{userId}")
+    long countByUser(Long userId);
+
+    @Select("""
+        SELECT COUNT(*) FROM study_document WHERE status = #{status}
+        """)
+    long countByStatus(String status);
 }

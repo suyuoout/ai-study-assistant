@@ -7,12 +7,29 @@ CREATE TABLE IF NOT EXISTS sys_user (
     password    VARCHAR(255) NOT NULL,
     nickname    VARCHAR(50)  DEFAULT NULL,
     email       VARCHAR(100) DEFAULT NULL,
-    ai_api_key  VARCHAR(255) DEFAULT NULL,
+    ai_api_key  VARCHAR(512) DEFAULT NULL,
     role        VARCHAR(20)  NOT NULL DEFAULT 'USER',
+    enabled     TINYINT(1)   NOT NULL DEFAULT 1,
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0,
     create_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ai_usage (
+    id                BIGINT      NOT NULL AUTO_INCREMENT,
+    user_id           BIGINT      NOT NULL,
+    kind              VARCHAR(20) NOT NULL,
+    model             VARCHAR(50) DEFAULT NULL,
+    prompt_tokens     INT         DEFAULT NULL,
+    completion_tokens INT         DEFAULT NULL,
+    success           TINYINT(1)  NOT NULL DEFAULT 1,
+    own_key           TINYINT(1)  NOT NULL DEFAULT 0,
+    create_time       DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_usage_user_time (user_id, create_time),
+    KEY idx_usage_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS study_document (
@@ -23,6 +40,7 @@ CREATE TABLE IF NOT EXISTS study_document (
     storage_path VARCHAR(500) DEFAULT NULL,
     file_type    VARCHAR(20)  DEFAULT NULL,
     status       VARCHAR(20)  NOT NULL DEFAULT 'UPLOADED',
+    error_message VARCHAR(500) DEFAULT NULL,
     create_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_document_user (user_id),

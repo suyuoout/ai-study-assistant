@@ -7,7 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  backend:
+    name: 后端构建与测试
     runs-on: ubuntu-latest
 
     steps:
@@ -20,9 +21,24 @@ jobs:
           java-version: '25'
           cache: maven
 
-      # 说明：默认跳过测试以保证流水线稳定；本地/CI 想跑测试可去掉 -DskipTests
-      - name: Build backend
-        run: mvn -B -f study-assisiant/pom.xml clean package -DskipTests
+      # 测试使用内存 H2，不需要外部 MySQL
+      - name: Build & test
+        run: mvn -B -f study-assisiant/pom.xml clean verify
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: study-assisiant/target/surefire-reports
+          if-no-files-found: ignore
+
+  frontend:
+    name: 前端检查与构建
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -31,8 +47,18 @@ jobs:
           cache: npm
           cache-dependency-path: study-assisiant-web/package-lock.json
 
-      - name: Build frontend
+      - name: Install dependencies
         working-directory: study-assisiant-web
-        run: |
-          npm ci
-          npm run build
+        run: npm ci
+
+      - name: Lint
+        working-directory: study-assisiant-web
+        run: npm run lint
+
+      - name: Unit tests
+        working-directory: study-assisiant-web
+        run: npm run test
+
+      - name: Type check & build
+        working-directory: study-assisiant-web
+        run: npm run build

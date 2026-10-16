@@ -1,11 +1,11 @@
--- 智能学习助手系统 - 完整建表脚本
--- 数据库：smart_learning（现有库名 study_assistant 亦可，脚本默认用 study_assistant）
+-- 智能学习助手系统 - 完整建表脚本（全新数据库用这个）
+-- 数据库名：study_assistant（与 README / DEPLOY.md / migrate.sql 保持一致）
 
-CREATE DATABASE IF NOT EXISTS smart_learning
+CREATE DATABASE IF NOT EXISTS study_assistant
     DEFAULT CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
 
-USE smart_learning;
+USE study_assistant;
 
 -- 1. 用户表
 CREATE TABLE IF NOT EXISTS sys_user (
@@ -14,13 +14,31 @@ CREATE TABLE IF NOT EXISTS sys_user (
     password    VARCHAR(255) NOT NULL COMMENT '密码哈希',
     nickname    VARCHAR(50)  DEFAULT NULL COMMENT '昵称',
     email       VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
-    ai_api_key  VARCHAR(255) DEFAULT NULL COMMENT '个人AI Key',
+    ai_api_key  VARCHAR(512) DEFAULT NULL COMMENT '个人AI Key（AES-GCM 加密后保存）',
     role        VARCHAR(20)  NOT NULL DEFAULT 'USER' COMMENT 'USER/ADMIN',
+    enabled     TINYINT(1)   NOT NULL DEFAULT 1 COMMENT '1启用/0禁用',
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1表示需要强制改密',
     create_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (id),
     UNIQUE KEY uk_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+
+-- 1.1 AI 调用用量记录（管理后台统计 / 个人额度展示）
+CREATE TABLE IF NOT EXISTS ai_usage (
+    id                BIGINT      NOT NULL AUTO_INCREMENT COMMENT '记录ID',
+    user_id           BIGINT      NOT NULL COMMENT '用户ID',
+    kind              VARCHAR(20) NOT NULL COMMENT 'CHAT/RAG/PLAN/REPORT 等',
+    model             VARCHAR(50) DEFAULT NULL COMMENT '模型名',
+    prompt_tokens     INT         DEFAULT NULL COMMENT '输入token',
+    completion_tokens INT         DEFAULT NULL COMMENT '输出token',
+    success           TINYINT(1)  NOT NULL DEFAULT 1 COMMENT '是否成功',
+    own_key           TINYINT(1)  NOT NULL DEFAULT 0 COMMENT '1表示用的是用户自己的Key',
+    create_time       DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '调用时间',
+    PRIMARY KEY (id),
+    KEY idx_usage_user_time (user_id, create_time),
+    KEY idx_usage_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI调用用量表';
 
 -- 2. 学习资料表
 CREATE TABLE IF NOT EXISTS study_document (
@@ -31,6 +49,7 @@ CREATE TABLE IF NOT EXISTS study_document (
     storage_path VARCHAR(500) DEFAULT NULL COMMENT '文件保存路径',
     file_type    VARCHAR(20)  DEFAULT NULL COMMENT 'PDF/TXT/DOCX',
     status       VARCHAR(20)  NOT NULL DEFAULT 'UPLOADED' COMMENT 'UPLOADED/PROCESSING/READY/FAILED',
+    error_message VARCHAR(500) DEFAULT NULL COMMENT '解析失败原因',
     create_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
     PRIMARY KEY (id),
     KEY idx_document_user (user_id),

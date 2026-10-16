@@ -1,14 +1,11 @@
 package com.study.assisiant.admin;
 
-public class RoleUpdateRequest {
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
-    private String role;
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
+public record RoleUpdateRequest(
+        @NotBlank(message = "角色不能为空")
+        @Pattern(regexp = "ADMIN|USER", message = "角色只能是 ADMIN 或 USER")
+        String role
+) {
 }

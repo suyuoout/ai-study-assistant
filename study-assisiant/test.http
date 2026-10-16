@@ -1,104 +1,81 @@
-
-### 测试用户注册
+### 1. 注册新用户
 POST http://localhost:8080/api/users/register
 Content-Type: application/json
 
 {
-  "username": "student_test01",
+  "username": "smokeuser",
   "password": "Study123456",
   "nickname": "学习用户",
-  "email": "student01@example.com"
+  "email": "smoke@example.com"
 }
 
-
-### 测试登录：正确的用户名和密码
-POST http://localhost:8080/api/users/login
+### 2. 重复注册（期望 409 用户名已存在）
+POST http://localhost:8080/api/users/register
 Content-Type: application/json
 
 {
-  "username": "student_test01",
+  "username": "smokeuser",
   "password": "Study123456"
 }
 
-### 测试登录：错误的密码
+### 3. 密码过短（期望 400 密码至少需要8位）
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "username": "shortpassword",
+  "password": "123"
+}
+
+### 4. 登录失败（期望 401）
 POST http://localhost:8080/api/users/login
 Content-Type: application/json
 
 {
-  "username": "student_test01",
+  "username": "smokeuser",
   "password": "WrongPassword123"
 }
 
-
-### 测试登录成功
+### 5. 登录成功（同时把 token 写入环境变量）
 POST http://localhost:8080/api/users/login
 Content-Type: application/json
 
 {
-  "username": "student_test01",
+  "username": "smokeuser",
   "password": "Study123456"
 }
 
-### 测试登录失败
-POST http://localhost:8080/api/users/login
-Content-Type: application/json
+> {%
+    client.global.set("token", response.body.data.token);
+%}
 
-{
-  "username": "student_test01",
-  "password": "WrongPassword123"
-}
+### 6. 当前用户信息
+GET http://localhost:8080/api/users/me
+Authorization: Bearer {{token}}
 
-### 1. 测试注册新用户
-POST http://localhost:8080/api/users/register
-Content-Type: application/json
+### 7. 个人 AI 用量
+GET http://localhost:8080/api/users/me/ai-usage
+Authorization: Bearer {{token}}
 
-{
-  "username": "student_test02",
-  "password": "Study123456",
-  "nickname": "新同学",
-  "email": "student02@example.com"
-}
+### 8. 资料列表
+GET http://localhost:8080/api/documents
+Authorization: Bearer {{token}}
 
-### 2. 测试重复注册
-POST http://localhost:8080/api/users/register
-Content-Type: application/json
+### 9. 今日任务
+GET http://localhost:8080/api/tasks
+Authorization: Bearer {{token}}
 
-{
-  "username": "student_test02",
-  "password": "Study123456",
-  "nickname": "新同学",
-  "email": "student02@example.com"
-}
+### 10. 待办清单
+GET http://localhost:8080/api/tasks/upcoming?days=0
+Authorization: Bearer {{token}}
 
-### 3. 测试密码长度不足
-POST http://localhost:8080/api/users/register
-Content-Type: application/json
+### 11. 学习看板数据
+GET http://localhost:8080/api/statistics/overview
+Authorization: Bearer {{token}}
 
-{
-  "username": "student_test03",
-  "password": "123",
-  "nickname": "测试用户",
-  "email": "student03@example.com"
-}
-### 检查注册接口响应
-POST http://localhost:8080/api/users/register
-Content-Type: application/json
+### 12. 管理员接口（普通用户访问期望 403）
+GET http://localhost:8080/api/admin/overview
+Authorization: Bearer {{token}}
 
-{
-  "username": "student_test02",
-  "password": "Study123456",
-  "nickname": "新同学",
-  "email": "student02@example.com"
-}
-
-
-### 测试注册密码长度不足
-POST http://localhost:8080/api/users/register
-Content-Type: application/json
-
-{
-  "username": "student_test03",
-  "password": "123",
-  "nickname": "测试用户",
-  "email": "student03@example.com"
-}
+### 13. 健康检查（无需登录）
+GET http://localhost:8080/actuator/health

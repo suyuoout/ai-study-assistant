@@ -1,10 +1,10 @@
-### 登录
+### 登录并把 token 存进环境变量（供其它 .http 文件引用）
 POST http://localhost:8080/api/users/login
 Content-Type: application/json
 
 {
-  "username":"student_test01",
-  "password":"Study123456"
+  "username": "smokeuser",
+  "password": "Study123456"
 }
 
 > {%

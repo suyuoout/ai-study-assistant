@@ -28,20 +28,37 @@
     <el-card shadow="never">
       <template #header>
         <div class="toolbar">
-          <span>任务列表</span>
+          <span>
+            任务列表
+            <span class="card-sub">
+              共 {{ overview.totalTasks || 0 }} 项 ·
+              {{ viewMode === "week" ? "本周" : "当天" }} {{ tasks.length }} 项
+            </span>
+          </span>
           <div class="toolbar-right">
             <el-radio-group v-model="viewMode" size="small" @change="loadTasks">
               <el-radio-button value="day">单日</el-radio-button>
               <el-radio-button value="week">本周</el-radio-button>
             </el-radio-group>
-            <el-date-picker
-                v-if="viewMode === 'day'"
-                v-model="date"
-                type="date"
-                value-format="YYYY-MM-DD"
-                :clearable="false"
-                @change="loadTasks"
-            />
+            <template v-if="viewMode === 'day'">
+              <el-date-picker
+                  v-model="date"
+                  type="date"
+                  value-format="YYYY-MM-DD"
+                  :clearable="false"
+                  @change="loadTasks"
+              />
+            </template>
+            <template v-else>
+              <span class="card-sub">截至</span>
+              <el-date-picker
+                  v-model="date"
+                  type="date"
+                  value-format="YYYY-MM-DD"
+                  :clearable="false"
+                  @change="loadTasks"
+              />
+            </template>
             <el-button type="primary" @click="openCreate">新增任务</el-button>
           </div>
         </div>
@@ -185,7 +202,8 @@ import request, { errorMessage } from "../api/request"
 import { todayString, addDays, formatDate } from "../utils/format"
 
 const date = ref(todayString())
-const viewMode = ref("day")
+// 默认看「本周」：计划里的任务按日期分布，只看单日容易以为任务丢了
+const viewMode = ref("week")
 const tasks = ref([])
 const plans = ref([])
 const pending = ref([])
@@ -413,6 +431,12 @@ onMounted(refreshAll)
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.card-sub {
+  color: var(--ink-caption);
+  font-size: 12px;
+  margin-left: 8px;
 }
 
 .pending-item {

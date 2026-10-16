@@ -138,13 +138,14 @@ mvn spring-boot:run -Dspring-boot.run.profiles=prod
 | 模块 | 接口 |
 |---|---|
 | 账号 | `POST /api/users/register`、`POST /api/users/login`、`GET /api/users/me`、`PUT /api/users/me`、`PUT /api/users/me/password`、`PUT /api/users/me/ai-key`、`GET /api/users/me/ai-usage` |
+| 公共 | `GET /api/public/config`（无需登录，返回是否开放注册） |
 | 对话 | `POST /api/ai/chat`、`POST /api/ai/chat/stream`(SSE)、`GET /api/chat/sessions`、`GET /api/chat/sessions/{id}/messages`、`PUT /api/chat/sessions/{id}`、`DELETE /api/chat/sessions/{id}` |
 | 知识库 | `POST /api/documents`、`GET /api/documents`、`GET /api/documents/{id}`、`GET /api/documents/{id}/chunks`、`DELETE /api/documents/{id}`、`POST /api/documents/{id}/reprocess` |
 | RAG | `POST /api/ai/rag/chat`、`POST /api/ai/rag/chat/stream`(SSE) |
 | 计划 | `POST /api/plans/generate`、`GET /api/plans`、`GET /api/plans/{id}`、`GET /api/plans/{id}/tasks`、`PUT /api/plans/{id}`、`DELETE /api/plans/{id}` |
 | 任务 | `GET /api/tasks`、`GET /api/tasks/upcoming`、`POST /api/tasks`、`PUT /api/tasks/{id}`、`PATCH /api/tasks/{id}/status`、`DELETE /api/tasks/{id}` |
 | 统计 | `GET /api/statistics/overview`、`GET /api/statistics/daily`、`GET /api/statistics/report` |
-| 管理 | `GET /api/admin/overview`、`GET /api/admin/ai-usage`、`GET /api/admin/users`、`PUT /api/admin/users/{id}/role`、`PUT /api/admin/users/{id}/enabled`、`GET /api/admin/documents`、`DELETE /api/admin/documents/{id}`、`GET /api/admin/plans`、`DELETE /api/admin/plans/{id}` |
+| 管理 | `GET /api/admin/overview`、`GET /api/admin/ai-usage`、`GET /api/admin/users`、`POST /api/admin/users`(新建账号)、`PUT /api/admin/users/{id}/role`、`PUT /api/admin/users/{id}/enabled`、`GET /api/admin/documents`、`DELETE /api/admin/documents/{id}`、`POST /api/admin/documents/reindex`(从挂载盘重建资料)、`GET /api/admin/plans`、`DELETE /api/admin/plans/{id}` |
 | 运维 | `GET /actuator/health`、`GET /actuator/info` |
 
 所有 `/api/**` 接口（除登录、注册）都需要 `Authorization: Bearer <token>`。

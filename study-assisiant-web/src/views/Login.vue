@@ -35,9 +35,12 @@
         </el-button>
       </el-form>
 
-      <div class="auth-link">
+      <div v-if="allowRegister" class="auth-link">
         还没有账号？
         <router-link to="/register">立即注册</router-link>
+      </div>
+      <div v-else class="auth-link muted">
+        本环境未开放注册，需要账号请联系管理员开通
       </div>
     </el-card>
   </div>
@@ -45,7 +48,7 @@
 
 
 <script setup>
-import { ref } from "vue"
+import { ref, onMounted } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { ElMessage, ElMessageBox } from "element-plus"
 import { User, Lock } from "@element-plus/icons-vue"
@@ -54,8 +57,18 @@ import request, { errorMessage } from "../api/request"
 const username = ref("")
 const password = ref("")
 const loading = ref(false)
+const allowRegister = ref(true)
 const route = useRoute()
 const router = useRouter()
+
+onMounted(async () => {
+  try {
+    const res = await request.get("/api/public/config")
+    allowRegister.value = res.data.data?.allowRegister !== false
+  } catch (error) {
+    // 拿不到配置就保持默认（显示注册入口）
+  }
+})
 
 const login = async () => {
   if (!username.value || !password.value) {
@@ -132,5 +145,10 @@ const login = async () => {
   margin-top: 18px;
   color: rgba(255, 255, 255, 0.5);
   font-size: 13px;
+}
+
+.auth-link.muted {
+  color: rgba(255, 255, 255, 0.35);
+  line-height: 1.6;
 }
 </style>

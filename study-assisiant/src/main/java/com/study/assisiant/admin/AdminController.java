@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,6 +53,8 @@ public class AdminController {
     private final DocumentStorage documentStorage;
     private final DocumentRecoveryService recoveryService;
     private final JdbcTemplate jdbcTemplate;
+    private final BCryptPasswordEncoder passwordEncoder =
+            new BCryptPasswordEncoder();
 
     public AdminController(SysUserMapper sysUserMapper,
                            UserCache userCache,
@@ -144,6 +147,43 @@ public class AdminController {
         log.info("管理员 {} 将用户 {} 的角色改为 {}",
                 currentUserId(request), id, body.role());
         return Result.success("修改成功", null);
+    }
+
+    /**
+     * 管理员创建账号（注册关闭时给同学开号）。
+     *
+     * <p>新账号会被要求首次登录后修改密码。</p>
+     */
+    @PostMapping("/users")
+    public Result<UserVO> createUser(
+            @Valid @RequestBody AdminCreateUserRequest body,
+            HttpServletRequest request) {
+        requireAdmin(request);
+
+        String username = body.username().trim();
+        if (sysUserMapper.findByUsername(username) != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "用户名已存在");
+        }
+
+        SysUser user = new SysUser();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(body.password()));
+        user.setNickname(blankToNull(body.nickname()));
+        user.setEmail(blankToNull(body.email()));
+        user.setRole("ADMIN".equals(body.role()) ? "ADMIN" : "USER");
+        user.setEnabled(true);
+        user.setMustChangePassword(true);
+
+        if (sysUserMapper.insert(user) != 1) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "创建失败");
+        }
+
+        log.info("管理员 {} 创建了账号 {}（角色 {}）",
+                currentUserId(request), username, user.getRole());
+        return Result.success("创建成功，该账号首次登录后需要修改密码",
+                UserVO.of(user, null));
     }
 
     /** 禁用 / 启用账号；禁用后该账号的请求会被拦截器直接拒绝 */
@@ -295,6 +335,14 @@ public class AdminController {
 
     private Long currentUserId(HttpServletRequest request) {
         return (Long) request.getAttribute(JwtInterceptor.ATTR_USER_ID);
+    }
+
+    private String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private UserVO toVO(SysUser user) {

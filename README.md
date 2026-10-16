@@ -158,7 +158,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=prod
 | `AI_TEMPERATURE` / `AI_MAX_TOKENS` | 生成参数 | `0.7` / `2048` |
 | `AI_DAILY_LIMIT` | 每用户每天使用系统 Key 的次数（0 表示不限制） | `50` |
 | `JWT_SECRET` / `JWT_EXPIRE_MINUTES` | 令牌密钥与有效期 | 开发默认值 / `120` |
-| `CRYPTO_KEY` | 个人 AI Key 的加密密钥（生产必须显式设置） | 回退用 `JWT_SECRET` 派生 |
+| `CRYPTO_KEY` | 个人 AI Key 的加密密钥（建议显式设置） | 回退用 `JWT_SECRET` 派生并打印告警 |
 | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | MySQL 连接（prod 环境必填） | — |
 | `UPLOAD_DIR` | 上传目录 | `${user.home}/.study-assistant/uploads` |
 | `ALLOW_REGISTER` | 是否开放注册 | `true`（生产建议 `false`） |

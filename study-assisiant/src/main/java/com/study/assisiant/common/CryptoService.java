@@ -41,8 +41,12 @@ public class CryptoService {
         String material = (cryptoKey != null && !cryptoKey.isBlank())
                 ? cryptoKey : jwtSecret;
         if (material == null || material.isBlank()) {
-            throw new IllegalStateException(
-                    "缺少加密密钥：请配置 app.crypto-key 或 jwt.secret");
+            // 不在这里抛异常：让 EnvironmentValidator 汇总给出可读的缺失清单，
+            // 这里只在真的要用到加解密的时候再报错。
+            log.error("未配置加密密钥（CRYPTO_KEY / JWT_SECRET），"
+                    + "个人 AI Key 的加解密功能将不可用");
+            this.key = null;
+            return;
         }
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
@@ -53,12 +57,20 @@ public class CryptoService {
         }
     }
 
+    private void requireKey() {
+        if (key == null) {
+            throw new IllegalStateException(
+                    "加密密钥未配置：请设置环境变量 JWT_SECRET 或 CRYPTO_KEY");
+        }
+    }
+
     /** 加密；空值或已加密的值原样返回 */
     public String encrypt(String plainText) {
         if (plainText == null || plainText.isBlank()
                 || isEncrypted(plainText)) {
             return plainText;
         }
+        requireKey();
         try {
             byte[] iv = new byte[IV_LENGTH];
             random.nextBytes(iv);
@@ -88,6 +100,7 @@ public class CryptoService {
         if (!isEncrypted(stored)) {
             return stored;
         }
+        requireKey();
         try {
             byte[] combined = Base64.getDecoder()
                     .decode(stored.substring(PREFIX.length()));

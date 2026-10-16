@@ -21,7 +21,9 @@ spring:
       max-file-size: 20MB
       max-request-size: 25MB
   datasource:
-    url: jdbc:h2:file:${user.home}/.study-assistant/data/study_assistant;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE
+    # 演示模式（不设 SPRING_PROFILES_ACTIVE=prod）使用容器内 H2 文件库。
+    # 想让数据活过重新部署，把 H2_DATA_DIR 指向持久化挂载目录，例如 /mnt/h2。
+    url: jdbc:h2:file:${H2_DATA_DIR:${user.home}/.study-assistant/data}/study_assistant;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_ON_EXIT=FALSE
     username: sa
     password: ""
     driver-class-name: org.h2.Driver

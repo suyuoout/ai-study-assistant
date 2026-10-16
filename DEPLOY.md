@@ -38,6 +38,7 @@
 | `DEEPSEEK_API_KEY` | 系统默认的大模型 Key。**可以不设**，此时用户需在「个人中心」填自己的 Key | 空 |
 | `CRYPTO_KEY` | 个人 AI Key 的加密密钥。不设时回退用 `JWT_SECRET` 派生（会打印告警） | 空 |
 | `UPLOAD_DIR` | 上传目录；容器无状态，重启会丢文件 | `${user.home}/.study-assistant/uploads` |
+| `H2_DATA_DIR` | **仅演示模式**：H2 数据库文件所在目录，指向持久化挂载可保住数据 | `${user.home}/.study-assistant/data` |
 | `ALLOW_REGISTER` | 是否开放注册，生产建议 `false` | `true` |
 | `AI_DAILY_LIMIT` | 每用户每天使用系统 Key 的次数（`0` 不限制） | `50` |
 | `BOOTSTRAP_ADMIN` | 首次部署时设为 `true` 以创建初始管理员 | `false` |
@@ -108,11 +109,12 @@ TZ=Asia/Shanghai
 JWT_SECRET=<32位以上随机串>
 CRYPTO_KEY=<另一串随机串>
 ALLOW_REGISTER=true
-UPLOAD_DIR=/data/uploads
+UPLOAD_DIR=/mnt/uploads
+H2_DATA_DIR=/mnt/h2
 TZ=Asia/Shanghai
 ```
 
-不要设置 `SPRING_PROFILES_ACTIVE`，程序会用容器内的 H2 文件库。
+不要设置 `SPRING_PROFILES_ACTIVE`，程序会用 H2 文件库（默认在容器内，`H2_DATA_DIR` 可指到挂载盘）。
 
 ### 3. 部署日志里如果卡在「检出代码仓库」
 
@@ -229,10 +231,23 @@ java -Duser.timezone=Asia/Shanghai -jar study-assisiant-0.0.1-SNAPSHOT.jar --spr
 
 容器是无状态的，不挂存储时下列数据在**每次重新部署后都会丢失**：
 
-| 挂载路径 | 存放内容 | 是否必需 |
+| 实例内目录 | 对应环境变量 | 存放内容 |
 |---|---|---|
-| `/data/uploads` | 用户上传的 PDF/TXT/DOCX | 想保留资料就要挂 |
-| `/root/.study-assistant` | 演示模式的 H2 数据库文件（生产模式用 MySQL，不需要） | 演示模式想保数据就要挂 |
+| `/mnt/uploads` | `UPLOAD_DIR=/mnt/uploads` | 用户上传的 PDF/TXT/DOCX |
+| `/mnt/h2` | `H2_DATA_DIR=/mnt/h2` | 演示模式的 H2 数据库文件 |
+
+存储挂载表单怎么填（以微信云托管为例）：
+
+| 字段 | 建议值 |
+|---|---|
+| 存储类型 | 优先 **文件存储 CFS**（POSIX 语义完整，适合放数据库）；只存上传文件时用「对象存储」也可以 |
+| 存储桶 / 文件系统 | 用平台自动创建的，或自己新建一个 |
+| 对象存储挂载目录 | `/`（挂整个桶）或 `/study-assistant`（只挂一个子目录） |
+| 挂载到实例目录 | `/mnt`（平台禁止挂载 `/`、`/proc`、`/sys`、`/dev`、`/var/run`、`/app/cert`） |
+| 腾讯云 API 密钥 | 必填项：点「立即新建连接密钥」按引导生成，或去「授权管理」选择已有密钥（平台用它访问存储） |
+
+> 注意：**不要把 H2 数据库文件放在「对象存储」挂载盘上**——对象存储的 FUSE 挂载对文件锁和随机写支持较弱，
+> 数据库容易损坏；放 H2 请用 CFS 文件存储，或者干脆改用 MySQL。
 
 ### 3. 实例副本数：演示模式必须是 1
 

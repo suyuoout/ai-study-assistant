@@ -1,5 +1,6 @@
 package com.study.assisiant.ai;
 
+import com.study.assisiant.common.EnvNumber;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import okhttp3.ConnectionPool;
@@ -54,15 +55,17 @@ public class AIService {
             AIConfig aiConfig,
             AiRateLimiter aiRateLimiter,
             AiUsageService usageService,
-            @Value("${ai.connect-timeout-seconds:30}") long connectTimeout,
-            @Value("${ai.read-timeout-seconds:120}") long readTimeout) {
+            @Value("${ai.connect-timeout-seconds:}") String connectTimeout,
+            @Value("${ai.read-timeout-seconds:}") String readTimeout) {
 
         this.aiConfig = aiConfig;
         this.aiRateLimiter = aiRateLimiter;
         this.usageService = usageService;
         this.client = new OkHttpClient.Builder()
-                .connectTimeout(connectTimeout, TimeUnit.SECONDS)
-                .readTimeout(readTimeout, TimeUnit.SECONDS)
+                .connectTimeout(EnvNumber.toLong(connectTimeout, 30),
+                        TimeUnit.SECONDS)
+                .readTimeout(EnvNumber.toLong(readTimeout, 120),
+                        TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS)
                 .connectionPool(new ConnectionPool(20, 5, TimeUnit.MINUTES))
                 .build();

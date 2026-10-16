@@ -10,7 +10,7 @@ class LoginAttemptServiceTest {
 
     @Test
     void locksAfterMaxAttempts() {
-        LoginAttemptService service = new LoginAttemptService(3, 10);
+        LoginAttemptService service = new LoginAttemptService("3", "10");
         String ip = "127.0.0.1";
 
         service.onFailure("alice", ip);
@@ -24,7 +24,7 @@ class LoginAttemptServiceTest {
 
     @Test
     void successResetsCounter() {
-        LoginAttemptService service = new LoginAttemptService(3, 10);
+        LoginAttemptService service = new LoginAttemptService("3", "10");
         String ip = "10.0.0.1";
 
         service.onFailure("bob", ip);
@@ -37,7 +37,7 @@ class LoginAttemptServiceTest {
 
     @Test
     void differentAccountIsNotAffected() {
-        LoginAttemptService service = new LoginAttemptService(2, 10);
+        LoginAttemptService service = new LoginAttemptService("2", "10");
         String ip = "10.0.0.2";
 
         service.onFailure("carol", ip);

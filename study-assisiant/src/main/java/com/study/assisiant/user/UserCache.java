@@ -1,5 +1,6 @@
 package com.study.assisiant.user;
 
+import com.study.assisiant.common.EnvNumber;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -22,8 +23,9 @@ public class UserCache {
 
     private final Map<Long, Entry> cache = new ConcurrentHashMap<>();
 
-    public UserCache(@Value("${app.user-cache-seconds:60}") long ttlSeconds) {
-        this.ttlSeconds = ttlSeconds;
+    public UserCache(
+            @Value("${app.user-cache-seconds:}") String ttlSeconds) {
+        this.ttlSeconds = EnvNumber.toLong(ttlSeconds, 60);
     }
 
     public SysUser get(Long userId, Supplier<SysUser> loader) {

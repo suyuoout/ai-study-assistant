@@ -47,3 +47,19 @@ export const weekdayOf = (dateString) => {
   const date = new Date(`${dateString}T00:00:00`)
   return "日一二三四五六"[date.getDay()]
 }
+
+/**
+ * 把后端返回的日期字段统一成 yyyy-MM-dd。
+ *
+ * 后端 DATE 列经 Jackson 序列化后是完整 ISO 时间戳
+ * （例如 2026-10-16T00:00:00.000+08:00），直接当 Map 的 key
+ * 会和本地日期对不上，导致按日期聚合的图表全为 0。
+ */
+export const normalizeDateKey = (value) => {
+  if (value === null || value === undefined || value === "") return ""
+  if (typeof value === "number") {
+    return toDateString(new Date(value))
+  }
+  const matched = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return matched ? `${matched[1]}-${matched[2]}-${matched[3]}` : ""
+}

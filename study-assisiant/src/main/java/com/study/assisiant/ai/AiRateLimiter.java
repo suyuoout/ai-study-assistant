@@ -1,5 +1,6 @@
 package com.study.assisiant.ai;
 
+import com.study.assisiant.common.EnvNumber;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -14,8 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class AiRateLimiter {
 
-    @Value("${app.ai-daily-limit:50}")
-    private int dailyLimit;
+    @Value("${app.ai-daily-limit:}")
+    private String dailyLimit;
 
     private final AiUsageService usageService;
 
@@ -24,20 +25,21 @@ public class AiRateLimiter {
     }
 
     public void check(Long userId) {
-        if (dailyLimit <= 0 || userId == null) {
+        int limit = getDailyLimit();
+        if (limit <= 0 || userId == null) {
             return;
         }
         long used = usageService.countTodaySystemKey(userId);
-        if (used >= dailyLimit) {
+        if (used >= limit) {
             throw new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS,
-                    "今日 AI 使用次数已达上限（" + dailyLimit
+                    "今日 AI 使用次数已达上限（" + limit
                             + " 次），可在个人中心配置自己的 API Key 后继续使用");
         }
     }
 
     public int getDailyLimit() {
-        return dailyLimit;
+        return EnvNumber.toInt(dailyLimit, 50);
     }
 
     public long usedToday(Long userId) {

@@ -54,10 +54,23 @@
       <template #header>
         <div class="card-head">
           <span>学习趋势</span>
-          <span class="card-sub">最近 14 天的学习时长与完成任务数</span>
+          <span class="card-sub">
+            近 {{ trendDays }} 天累计 {{ trendTotal.minutes }} 分钟 ·
+            完成 {{ trendTotal.done }} 项
+          </span>
+          <el-radio-group v-model="trendDays" size="small" @change="loadTrend">
+            <el-radio-button :value="7">7 天</el-radio-button>
+            <el-radio-button :value="14">14 天</el-radio-button>
+            <el-radio-button :value="30">30 天</el-radio-button>
+          </el-radio-group>
         </div>
       </template>
-      <TrendChart :data="trendData" />
+      <TrendChart v-if="trendData.length" :data="trendData" />
+      <el-empty
+          v-else
+          :description="`最近 ${trendDays} 天还没有学习记录，完成任务后这里会出现趋势`"
+          :image-size="70"
+      />
     </el-card>
 
     <div class="grid">
@@ -143,7 +156,9 @@ import { ref, computed, onMounted } from "vue"
 import { ElMessage } from "element-plus"
 import request, { errorMessage } from "../api/request"
 import { renderMarkdown } from "../utils/markdown"
-import { toDateString, todayString, addDays } from "../utils/format"
+import {
+  toDateString, todayString, addDays, normalizeDateKey
+} from "../utils/format"
 import TrendChart from "../components/TrendChart.vue"
 
 const overview = ref({})
@@ -154,7 +169,10 @@ const heatCells = ref([])
 const username = ref("")
 const todayTasks = ref([])
 const pendingCount = ref(0)
+const dailyStats = ref([])
 const trendData = ref([])
+const trendDays = ref(14)
+const trendTotal = ref({ minutes: 0, done: 0 })
 
 const reportVisible = ref(false)
 const reportDays = ref(7)
@@ -241,9 +259,9 @@ const buildHeat = (daily) => {
 
 /** 后端返回的字段可能是 taskDate 或 task_date，这里都兼容 */
 const minutesOf = (item) =>
-  item.taskDate || item.task_date || item.TASKDATE || ""
+  normalizeDateKey(item.taskDate || item.task_date || item.TASKDATE)
 
-/** 取最近 14 天并补全没有记录的日期，保证图表 X 轴连续 */
+/** 取最近 N 天并补全没有记录的日期，保证图表 X 轴连续 */
 const buildTrend = (daily) => {
   const byDate = new Map()
   for (const item of daily) {
@@ -254,11 +272,19 @@ const buildTrend = (daily) => {
   }
   const today = todayString()
   const result = []
-  for (let i = 13; i >= 0; i--) {
+  for (let i = trendDays.value - 1; i >= 0; i--) {
     const date = addDays(today, -i)
     result.push({ date, ...(byDate.get(date) || { minutes: 0, done: 0 }) })
   }
   return result
+}
+
+const loadTrend = () => {
+  trendData.value = buildTrend(dailyStats.value)
+  trendTotal.value = {
+    minutes: trendData.value.reduce((sum, d) => sum + d.minutes, 0),
+    done: trendData.value.reduce((sum, d) => sum + d.done, 0)
+  }
 }
 
 const loadReport = async () => {
@@ -302,8 +328,9 @@ onMounted(async () => {
     username.value = me.data.data?.nickname || me.data.data?.username || ""
     todayTasks.value = todayTasksRes.data.data || []
     pendingCount.value = (pending.data.data || []).length
-    trendData.value = buildTrend(d.data.data || [])
-    heatCells.value = buildHeat(d.data.data || [])
+    dailyStats.value = d.data.data || []
+    loadTrend()
+    heatCells.value = buildHeat(dailyStats.value)
   } catch (error) {
     ElMessage.error(errorMessage(error, "看板数据加载失败"))
   }
@@ -428,6 +455,10 @@ onMounted(async () => {
   display: flex;
   align-items: baseline;
   gap: 12px;
+}
+
+.card-head :deep(.el-radio-group) {
+  margin-left: auto;
 }
 
 .card-sub {

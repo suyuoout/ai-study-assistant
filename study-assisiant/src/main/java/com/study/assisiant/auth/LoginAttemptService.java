@@ -2,6 +2,7 @@ package com.study.assisiant.auth;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.study.assisiant.common.EnvNumber;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -30,10 +31,10 @@ public class LoginAttemptService {
     private final Map<String, Attempt> attempts = new ConcurrentHashMap<>();
 
     public LoginAttemptService(
-            @Value("${app.login-max-attempts:5}") int maxAttempts,
-            @Value("${app.login-lock-minutes:10}") int lockMinutes) {
-        this.maxAttempts = maxAttempts;
-        this.lockMinutes = lockMinutes;
+            @Value("${app.login-max-attempts:}") String maxAttempts,
+            @Value("${app.login-lock-minutes:}") String lockMinutes) {
+        this.maxAttempts = EnvNumber.toInt(maxAttempts, 5);
+        this.lockMinutes = EnvNumber.toInt(lockMinutes, 10);
     }
 
     /** 登录前调用：被锁定则抛出 429 */

@@ -1,5 +1,6 @@
 package com.study.assisiant.ai;
 
+import com.study.assisiant.common.EnvNumber;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,11 +16,11 @@ public class AIConfig {
     @Value("${ai.model:deepseek-chat}")
     private String model;
 
-    @Value("${ai.temperature:0.7}")
-    private double temperature;
+    @Value("${ai.temperature:}")
+    private String temperature;
 
-    @Value("${ai.max-tokens:2048}")
-    private int maxTokens;
+    @Value("${ai.max-tokens:}")
+    private String maxTokens;
 
     public String getApiKey() {
         return apiKey;
@@ -34,11 +35,11 @@ public class AIConfig {
     }
 
     public double getTemperature() {
-        return temperature;
+        return EnvNumber.toDouble(temperature, 0.7);
     }
 
     public int getMaxTokens() {
-        return maxTokens;
+        return EnvNumber.toInt(maxTokens, 8192);
     }
 
     public boolean hasSystemKey() {

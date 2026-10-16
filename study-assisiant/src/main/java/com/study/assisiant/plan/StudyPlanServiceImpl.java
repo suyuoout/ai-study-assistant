@@ -182,6 +182,9 @@ public class StudyPlanServiceImpl implements StudyPlanService {
                 || request.currentLevel().isBlank())
                 ? "未填写" : request.currentLevel();
 
+        long span = ChronoUnit.DAYS.between(
+                request.startDate(), request.endDate()) + 1;
+
         return """
                 请根据以下信息生成一份结构化学习计划，输出 JSON，格式如下：
                 {
@@ -197,9 +200,12 @@ public class StudyPlanServiceImpl implements StudyPlanService {
                 截止日期：%s
                 每日可用分钟：%d
                 可学习日：%s
+                计划总天数：%d 天
 
                 要求：任务日期必须在开始和截止日期之间；单个任务预计用时不超过每日可用分钟；
-                任务数量合理（不超过 %d 条），title 简洁明确，description 写清具体做什么。
+                任务数量合理（最多 %d 条），覆盖到截止日期；
+                title 不超过 20 字、description 不超过 30 字，不要输出多余字段，
+                以便整体控制在一次输出的长度限制内。
                 """.formatted(
                 request.goal(),
                 level,
@@ -207,6 +213,7 @@ public class StudyPlanServiceImpl implements StudyPlanService {
                 request.endDate(),
                 request.dailyMinutes(),
                 days,
+                span,
                 MAX_TASKS);
     }
 

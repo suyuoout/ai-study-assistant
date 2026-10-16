@@ -45,7 +45,7 @@
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | 初始管理员账号；不填密码则随机生成并打印一次 | `admin` / 空 |
 | `TZ` | 容器时区，**建议设成 `Asia/Shanghai`** | 镜像内已是东八区 |
 | `AI_MODEL` | 模型名 | `deepseek-chat` |
-| `AI_TEMPERATURE` / `AI_MAX_TOKENS` | 生成参数 | `0.7` / `2048` |
+| `AI_TEMPERATURE` / `AI_MAX_TOKENS` | 生成参数；长周期学习计划需要较大输出上限 | `0.7` / `8192` |
 | `AI_CONNECT_TIMEOUT` / `AI_READ_TIMEOUT` | 调用大模型的连接/读取超时（秒） | `30` / `120` |
 | `JWT_EXPIRE_MINUTES` | 令牌有效期（分钟） | `120` |
 | `ASYNC_PARSE` | 文档解析是否异步执行 | `true` |

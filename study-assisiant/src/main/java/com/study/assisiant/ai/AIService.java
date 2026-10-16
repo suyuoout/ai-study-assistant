@@ -209,6 +209,19 @@ public class AIService {
                     ownKey, true);
 
             JSONObject first = choices.getJSONObject(0);
+            String finishReason = first == null
+                    ? null : first.getString("finish_reason");
+            if (jsonMode && "length".equals(finishReason)) {
+                // 结构化输出被截断时 JSON 必然不完整，直接给出可操作的提示
+                log.warn("AI 结构化输出被截断 model={} maxTokens={}",
+                        aiConfig.getModel(), aiConfig.getMaxTokens());
+                usageService.record(ctx.userId(), ctx.kind(),
+                        aiConfig.getModel(), promptTokens, completionTokens,
+                        ownKey, false);
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                        "AI 输出被截断：计划内容超出了单次生成上限，"
+                                + "请缩短时间范围（如 30 天）或减少每日任务量后重试");
+            }
             JSONObject message = first == null
                     ? null : first.getJSONObject("message");
             String content = message == null

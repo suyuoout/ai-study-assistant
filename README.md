@@ -155,7 +155,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=prod
 |---|---|---|
 | `DEEPSEEK_API_KEY` | 系统默认的 AI Key（用户没配自己的 Key 时使用） | 空 |
 | `AI_MODEL` | 模型名 | `deepseek-chat` |
-| `AI_TEMPERATURE` / `AI_MAX_TOKENS` | 生成参数 | `0.7` / `2048` |
+| `AI_TEMPERATURE` / `AI_MAX_TOKENS` | 生成参数 | `0.7` / `8192` |
 | `AI_DAILY_LIMIT` | 每用户每天使用系统 Key 的次数（0 表示不限制） | `50` |
 | `JWT_SECRET` / `JWT_EXPIRE_MINUTES` | 令牌密钥与有效期 | 开发默认值 / `120` |
 | `CRYPTO_KEY` | 个人 AI Key 的加密密钥（建议显式设置） | 回退用 `JWT_SECRET` 派生并打印告警 |

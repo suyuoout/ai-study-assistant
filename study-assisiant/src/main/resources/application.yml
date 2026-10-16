@@ -3,7 +3,8 @@ ai:
   url: ${AI_BASE_URL:https://api.deepseek.com/chat/completions}
   model: ${AI_MODEL:deepseek-chat}
   temperature: ${AI_TEMPERATURE:0.7}
-  max-tokens: ${AI_MAX_TOKENS:2048}
+  # deepseek-chat 单次输出上限为 8192；长周期学习计划需要较长的输出
+  max-tokens: ${AI_MAX_TOKENS:8192}
   connect-timeout-seconds: ${AI_CONNECT_TIMEOUT:30}
   read-timeout-seconds: ${AI_READ_TIMEOUT:120}
 

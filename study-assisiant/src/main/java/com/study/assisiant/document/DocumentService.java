@@ -103,6 +103,10 @@ public class DocumentService {
         document.setStatus("PROCESSING");
         documentMapper.insert(document);
 
+        // 同步写一份元数据，便于日后从挂载盘重建索引时还原原始文件名
+        storage.writeMetadata(storagePath, originalName, userId,
+                document.getTitle());
+
         if (asyncParse) {
             parseService.parseAsync(document.getId());
         } else {

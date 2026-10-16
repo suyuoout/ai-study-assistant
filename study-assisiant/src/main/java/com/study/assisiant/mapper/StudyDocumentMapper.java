@@ -71,6 +71,9 @@ public interface StudyDocumentMapper {
     @Select("SELECT COUNT(*) FROM study_document WHERE user_id = #{userId}")
     long countByUser(Long userId);
 
+    @Select("SELECT storage_path FROM study_document")
+    List<String> findAllStoragePaths();
+
     @Select("""
         SELECT COUNT(*) FROM study_document WHERE status = #{status}
         """)

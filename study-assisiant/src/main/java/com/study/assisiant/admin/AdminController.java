@@ -5,6 +5,7 @@ import com.study.assisiant.auth.JwtInterceptor;
 import com.study.assisiant.common.PageResult;
 import com.study.assisiant.common.Result;
 import com.study.assisiant.document.DocumentStorage;
+import com.study.assisiant.document.DocumentRecoveryService;
 import com.study.assisiant.mapper.SysUserMapper;
 import com.study.assisiant.user.SysUser;
 import com.study.assisiant.user.UserCache;
@@ -18,6 +19,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,17 +50,20 @@ public class AdminController {
     private final UserCache userCache;
     private final AiUsageService aiUsageService;
     private final DocumentStorage documentStorage;
+    private final DocumentRecoveryService recoveryService;
     private final JdbcTemplate jdbcTemplate;
 
     public AdminController(SysUserMapper sysUserMapper,
                            UserCache userCache,
                            AiUsageService aiUsageService,
                            DocumentStorage documentStorage,
+                           DocumentRecoveryService recoveryService,
                            JdbcTemplate jdbcTemplate) {
         this.sysUserMapper = sysUserMapper;
         this.userCache = userCache;
         this.aiUsageService = aiUsageService;
         this.documentStorage = documentStorage;
+        this.recoveryService = recoveryService;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -212,6 +217,24 @@ public class AdminController {
         documentStorage.delete(storagePath);
         log.info("管理员 {} 删除了资料 {}", currentUserId(request), id);
         return Result.success("删除成功", null);
+    }
+
+    /**
+     * 从挂载盘重建资料索引。
+     *
+     * <p>适用于「上传目录挂持久化存储、但数据库每次重新部署清零」的部署方式：
+     * 扫描上传目录里已存在的文件，把缺失的记录补回数据库并重新解析。</p>
+     */
+    @PostMapping("/documents/reindex")
+    public Result<Map<String, Object>> reindexDocuments(
+            HttpServletRequest request) {
+        requireAdmin(request);
+
+        Map<String, Object> result =
+                recoveryService.recover(currentUserId(request));
+        log.info("管理员 {} 从挂载盘重建资料索引: {}",
+                currentUserId(request), result);
+        return Result.success("重建完成", result);
     }
 
     @GetMapping("/plans")

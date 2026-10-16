@@ -2,6 +2,14 @@
   <el-card shadow="never">
     <div class="toolbar">
       <span class="total">共 {{ total }} 份资料</span>
+      <el-tooltip
+          content="上传目录挂在持久化存储、但数据库被重置后，用这个按钮把磁盘上已有的文件重新写回数据库"
+          placement="top"
+      >
+        <el-button size="small" :loading="reindexing" @click="reindex">
+          从挂载盘重建资料
+        </el-button>
+      </el-tooltip>
     </div>
 
     <el-table :data="documents" stripe v-loading="loading">
@@ -62,6 +70,7 @@ const page = ref(1)
 const size = ref(20)
 const total = ref(0)
 const loading = ref(false)
+const reindexing = ref(false)
 
 const load = async () => {
   loading.value = true
@@ -104,6 +113,32 @@ const remove = async (row) => {
   }
 }
 
+const reindex = async () => {
+  try {
+    await ElMessageBox.confirm(
+      "将扫描上传目录，把磁盘上存在但数据库里没有的文件重新入库并解析。确认继续？",
+      "重建资料索引", { type: "warning" })
+  } catch (error) {
+    return
+  }
+
+  reindexing.value = true
+  try {
+    const res = await request.post("/api/admin/documents/reindex")
+    const data = res.data.data
+    await ElMessageBox.alert(
+      `扫描 ${data.scanned} 个文件：新恢复 ${data.recovered} 个、`
+      + `已存在 ${data.skipped} 个、失败 ${data.failed} 个。`
+      + "\n新恢复的资料正在后台解析，稍后刷新即可看到。",
+      "重建完成", { type: "success" })
+    load()
+  } catch (error) {
+    ElMessage.error(errorMessage(error, "重建失败"))
+  } finally {
+    reindexing.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -111,6 +146,9 @@ onMounted(load)
 <style scoped>
 .toolbar {
   margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .total {

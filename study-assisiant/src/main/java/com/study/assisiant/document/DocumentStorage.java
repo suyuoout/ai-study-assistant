@@ -11,6 +11,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -25,6 +30,13 @@ public class DocumentStorage {
 
     private static final Logger log =
             LoggerFactory.getLogger(DocumentStorage.class);
+
+    /** 与文件同目录的元数据文件后缀，用于挂载盘重建索引时还原原始文件名 */
+    public static final String META_SUFFIX = ".meta.json";
+
+    /** 允许作为资料参与重建的扩展名 */
+    private static final Set<String> RECOVERABLE_EXTENSIONS =
+            Set.of("pdf", "txt", "docx");
 
     @Value("${app.upload-dir}")
     private String uploadDir;
@@ -82,6 +94,91 @@ public class DocumentStorage {
         Path path = Paths.get(storagePath).toAbsolutePath().normalize();
         requireInsideRoot(path, root);
         return path;
+    }
+
+    /**
+     * 写一份与上传文件同名的元数据（原始文件名、归属用户、标题）。
+     *
+     * <p>文件本身是 UUID 命名，元数据损坏或缺失时重建索引只能用 UUID 当标题。</p>
+     */
+    public void writeMetadata(String storagePath, String fileName,
+                              Long userId, String title) {
+        try {
+            Path metaPath = Paths.get(
+                    resolveSafe(storagePath).toString() + META_SUFFIX);
+            String json = "{\"fileName\":" + quote(fileName)
+                    + ",\"userId\":" + userId
+                    + ",\"title\":" + quote(title) + "}";
+            Files.writeString(metaPath, json, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            // 元数据只是辅助信息，写失败不影响上传
+            log.warn("写入上传元数据失败 path={}", storagePath, e);
+        }
+    }
+
+    /** 读取元数据；不存在或损坏时返回 null */
+    public Meta readMetadata(String storagePath) {
+        try {
+            Path metaPath = Paths.get(
+                    resolveSafe(storagePath).toString() + META_SUFFIX);
+            if (!Files.exists(metaPath)) {
+                return null;
+            }
+            String json = Files.readString(metaPath, StandardCharsets.UTF_8);
+            return Meta.parse(json);
+        } catch (Exception e) {
+            log.warn("读取上传元数据失败 path={}", storagePath, e);
+            return null;
+        }
+    }
+
+    /** 扫描上传目录里已落盘、可作为资料恢复的文件 */
+    public List<Path> scanStoredFiles() {
+        Path root = root();
+        List<Path> files = new ArrayList<>();
+        if (!Files.isDirectory(root)) {
+            return files;
+        }
+        try (var stream = Files.list(root)) {
+            stream.filter(Files::isRegularFile)
+                    .filter(path -> RECOVERABLE_EXTENSIONS.contains(
+                            extensionOf(path.getFileName().toString())))
+                    .forEach(files::add);
+        } catch (IOException e) {
+            log.warn("扫描上传目录失败 root={}", root, e);
+        }
+        return files;
+    }
+
+    private String extensionOf(String name) {
+        int dot = name.lastIndexOf('.');
+        return dot < 0 ? "" : name.substring(dot + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private String quote(String value) {
+        if (value == null) {
+            return "null";
+        }
+        return "\"" + value.replace("\\", "\\\\")
+                .replace("\"", "\\\"") + "\"";
+    }
+
+    /** 上传文件的辅助元数据 */
+    public record Meta(String fileName, Long userId, String title) {
+
+        static Meta parse(String json) {
+            try {
+                com.alibaba.fastjson2.JSONObject object =
+                        com.alibaba.fastjson2.JSONObject.parseObject(json);
+                if (object == null) {
+                    return null;
+                }
+                return new Meta(object.getString("fileName"),
+                        object.getLong("userId"), object.getString("title"));
+            } catch (Exception e) {
+                return null;
+            }
+        }
     }
 
     private void requireInsideRoot(Path path, Path root) {

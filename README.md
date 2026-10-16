@@ -1,5 +1,13 @@
 # 智能学习助手（基于大语言模型与 RAG）
 
+![CI](https://github.com/suyuoout/ai-study-assistant/actions/workflows/ci.yml/badge.svg)
+![Java](https://img.shields.io/badge/Java-25-orange)
+![Spring%20Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6db33f)
+![Vue](https://img.shields.io/badge/Vue-3-42b883)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479a1)
+
+> 部署到自有服务器或云托管平台的完整步骤见 [DEPLOY.md](DEPLOY.md)。
+
 面向高校学生，提供课程资料管理、基于个人资料的智能问答、AI 学习计划生成与学习进度追踪。
 
 ## 技术栈

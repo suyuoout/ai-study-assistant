@@ -42,4 +42,30 @@ request.interceptors.request.use(
 )
 
 
+// 响应拦截器：统一处理登录过期（令牌失效直接回登录页）
+request.interceptors.response.use(
+
+    response => response,
+
+    error => {
+
+        const status = error.response?.status
+
+        if (status === 401) {
+
+            localStorage.removeItem("token")
+            localStorage.removeItem("role")
+
+            if (!location.hash.startsWith("#/login")) {
+                location.hash = "#/login"
+            }
+        }
+
+        return Promise.reject(error)
+
+    }
+
+)
+
+
 export default request
